@@ -56,6 +56,7 @@ enum {
   caml_policy_next_fit = 0,
   caml_policy_first_fit = 1,
   caml_policy_best_fit = 2,
+  caml_policy_alloc_five = 3,
 };
 extern void caml_set_allocation_policy (uintnat);
 

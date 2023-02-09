@@ -29,6 +29,8 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
+#include "camlatomic.h"
+
 /* Deprecation warnings */
 
 #if defined(__GNUC__) || defined(__clang__)
@@ -235,6 +237,14 @@ CAMLnoreturn_end;
 #define CAMLassert(x) ((void) 0)
 #endif
 
+#ifdef __GNUC__
+#define CAMLlikely(e)   __builtin_expect(!!(e), 1)
+#define CAMLunlikely(e) __builtin_expect(!!(e), 0)
+#else
+#define CAMLlikely(e) (e)
+#define CAMLunlikely(e) (e)
+#endif
+
 /* This hook is called when a fatal error occurs in the OCaml
    runtime. It is given arguments to be passed to the [vprintf]-like
    functions in order to synthetize the error message.
@@ -427,7 +437,14 @@ CAMLextern int caml_read_directory(char_os * dirname,
 
 /* GC flags and messages */
 
-extern uintnat caml_verb_gc;
+extern atomic_uintnat caml_verb_gc;
+
+void caml_gc_log (char *, ...)
+#ifdef __GNUC__
+  __attribute__ ((format (printf, 1, 2)))
+#endif
+;
+
 void caml_gc_message (int, char *, ...)
 #ifdef __GNUC__
   __attribute__ ((format (printf, 2, 3)))
@@ -524,6 +541,8 @@ extern int caml_snwprintf(wchar_t * buf,
  * so it is just exposed as a [void *].
  */
 typedef void * backtrace_slot;
+
+#define Is_power_of_2(x) ((x) > 0 && ((x) & ((x) - 1)) == 0)
 
 #ifdef __cplusplus
 }

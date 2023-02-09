@@ -20,6 +20,7 @@
 #include "caml/memory.h"
 
 CAMLexport caml_domain_state* Caml_state;
+CAMLexport atomic_uintnat caml_num_domains_running;
 
 void caml_init_domain ()
 {
@@ -90,5 +91,11 @@ void caml_init_domain ()
 
 #if defined(NAKED_POINTERS_CHECKER) && !defined(_WIN32)
   Caml_state->checking_pointer_pc = NULL;
-  #endif
+#endif
+
+
+  Caml_state->allocated_words = 0;
+  Caml_state->swept_words = 0;
+  Caml_state->major_work_todo = 0;
+  Caml_state->shared_heap = NULL;
 }

@@ -484,6 +484,7 @@ CAMLexport void caml_main(char_os **argv)
   caml_install_invalid_parameter_handler();
 #endif
   caml_init_custom_operations();
+  caml_init_os_params();
   caml_ext_table_init(&caml_shared_libs_path, 8);
 
   /* Determine position of bytecode file */

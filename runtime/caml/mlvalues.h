@@ -59,6 +59,7 @@ extern "C" {
 
 typedef intnat value;
 typedef uintnat header_t;
+typedef header_t reserved_t;
 typedef uintnat mlsize_t;
 typedef unsigned int tag_t;             /* Actually, an unsigned char */
 typedef uintnat color_t;

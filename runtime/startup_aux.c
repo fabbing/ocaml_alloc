@@ -126,7 +126,11 @@ void caml_parse_ocamlrunparam(void)
       case 'R': break; /*  see stdlib/hashtbl.mli */
       case 's': scanmult (opt, &caml_init_minor_heap_wsz); break;
       case 't': scanmult (opt, &caml_trace_level); break;
-      case 'v': scanmult (opt, &caml_verb_gc); break;
+      case 'v':
+        uintnat verb = 0;
+        scanmult (opt, &verb);
+        caml_verb_gc = verb;
+        break;
       case 'w': scanmult (opt, &caml_init_major_window); break;
       case 'W': scanmult (opt, &caml_runtime_warnings); break;
       case ',': continue;

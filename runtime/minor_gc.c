@@ -33,6 +33,8 @@
 #include "caml/memprof.h"
 #include "caml/eventlog.h"
 
+CAMLexport atomic_uintnat caml_minor_collections_count;
+
 /* Pointers into the minor heap.
    [Caml_state->young_base]
        The [malloc] block that contains the heap.

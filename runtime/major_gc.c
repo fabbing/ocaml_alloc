@@ -35,6 +35,7 @@
 #include "caml/weak.h"
 #include "caml/memprof.h"
 #include "caml/eventlog.h"
+#include "caml/shared_heap.h"
 
 #ifdef _MSC_VER
 Caml_inline double fmin(double a, double b) {
@@ -882,51 +883,59 @@ static void clean_slice (intnat work)
 
 static void sweep_slice (intnat work)
 {
-  char *hp, *sweep_hp, *limit;
-  header_t hd;
+  // TODO handle other allocation policy
+  work = caml_sweep(Caml_state->shared_heap, work);
 
-  caml_gc_message (0x40, "Sweeping %"
-                   ARCH_INTNAT_PRINTF_FORMAT "d words\n", work);
-  sweep_hp = caml_gc_sweep_hp;
-  limit = sweep_chunk + Chunk_size(sweep_chunk);
-  while (work > 0){
-    if (sweep_hp < limit){
-      caml_prefetch(sweep_hp + 4000);
-      hp = sweep_hp;
-      hd = Hd_hp (hp);
-      work -= Whsize_hd (hd);
-      sweep_hp += Bhsize_hd (hd);
-      switch (Color_hd (hd)){
-      case Caml_white:
-        caml_gc_sweep_hp = sweep_hp;
-        sweep_hp = (char *) caml_fl_merge_block (Val_hp (hp), limit);
-        break;
-      case Caml_blue:
-        /* Only the blocks of the free-list are blue.  See [freelist.c]. */
-        caml_fl_merge = (value) Bp_hp (hp);
-        break;
-      default:          /* gray or black */
-        CAMLassert (Color_hd (hd) == Caml_black);
-        Hd_hp (hp) = Whitehd_hd (hd);
-        break;
-      }
-      CAMLassert (sweep_hp <= limit);
-    }else{
-      sweep_chunk = Chunk_next (sweep_chunk);
-      if (sweep_chunk == NULL){
-        /* Sweeping is done. */
-        caml_gc_sweep_hp = sweep_hp;
-        ++ Caml_state->stat_major_collections;
-        work = 0;
-        caml_gc_phase = Phase_idle;
-        caml_request_minor_gc ();
-      }else{
-        sweep_hp = sweep_chunk;
-        limit = sweep_chunk + Chunk_size (sweep_chunk);
-      }
-    }
+  if (work > 0) {
+    /* Sweep is done. */
+    caml_gc_phase = Phase_idle;
   }
-  caml_gc_sweep_hp = sweep_hp;
+
+  //char *hp, *sweep_hp, *limit;
+  //header_t hd;
+
+  //caml_gc_message (0x40, "Sweeping %"
+  //                 ARCH_INTNAT_PRINTF_FORMAT "d words\n", work);
+  //sweep_hp = caml_gc_sweep_hp;
+  //limit = sweep_chunk + Chunk_size(sweep_chunk);
+  //while (work > 0){
+  //  if (sweep_hp < limit){
+  //    caml_prefetch(sweep_hp + 4000);
+  //    hp = sweep_hp;
+  //    hd = Hd_hp (hp);
+  //    work -= Whsize_hd (hd);
+  //    sweep_hp += Bhsize_hd (hd);
+  //    switch (Color_hd (hd)){
+  //    case Caml_white:
+  //      caml_gc_sweep_hp = sweep_hp;
+  //      sweep_hp = (char *) caml_fl_merge_block (Val_hp (hp), limit);
+  //      break;
+  //    case Caml_blue:
+  //      /* Only the blocks of the free-list are blue.  See [freelist.c]. */
+  //      caml_fl_merge = (value) Bp_hp (hp);
+  //      break;
+  //    default:          /* gray or black */
+  //      CAMLassert (Color_hd (hd) == Caml_black);
+  //      Hd_hp (hp) = Whitehd_hd (hd);
+  //      break;
+  //    }
+  //    CAMLassert (sweep_hp <= limit);
+  //  }else{
+  //    sweep_chunk = Chunk_next (sweep_chunk);
+  //    if (sweep_chunk == NULL){
+  //      /* Sweeping is done. */
+  //      caml_gc_sweep_hp = sweep_hp;
+  //      ++ Caml_state->stat_major_collections;
+  //      work = 0;
+  //      caml_gc_phase = Phase_idle;
+  //      caml_request_minor_gc ();
+  //    }else{
+  //      sweep_hp = sweep_chunk;
+  //      limit = sweep_chunk + Chunk_size (sweep_chunk);
+  //    }
+  //  }
+  //}
+  //caml_gc_sweep_hp = sweep_hp;
 }
 
 /* The main entry point for the major GC. Called about once for each
@@ -1237,6 +1246,12 @@ void caml_init_major_heap (asize_t heap_size)
         caml_heap_start + Bsize_wsize (Caml_state->stat_heap_wsz))
       != 0) {
     caml_fatal_error ("cannot allocate initial page table");
+  }
+ 
+  // TODO only if alloc5
+  Caml_state->shared_heap = caml_init_shared_heap();
+  if (Caml_state->shared_heap == NULL) {
+    caml_fatal_error ("cannot initialize shared heap");
   }
 
   caml_fl_init_merge ();

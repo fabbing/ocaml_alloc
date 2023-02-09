@@ -357,6 +357,8 @@ int caml_add_to_heap (char *m)
 */
 static value *expand_heap (mlsize_t request)
 {
+  CAMLassert(0); // FIXME shouldn't be called with shared_heap
+
   /* these point to headers, but we do arithmetic on them, hence [value *]. */
   value *mem, *hp, *prev;
   asize_t over_request, malloc_request, remain;

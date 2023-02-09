@@ -32,6 +32,7 @@ __declspec(noreturn) void __cdecl abort(void);
 #include "caml/misc.h"
 #include "caml/memory.h"
 #include "caml/osdeps.h"
+#include "caml/platform.h"
 #include "caml/version.h"
 
 caml_timing_hook caml_major_slice_begin_hook = NULL;
@@ -63,7 +64,22 @@ void caml_set_fields (value v, uintnat start, uintnat filler)
 
 #endif /* DEBUG */
 
-uintnat caml_verb_gc = 0;
+#define GC_LOG_LENGTH 512
+
+atomic_uintnat caml_verb_gc = 0;
+
+void caml_gc_log (char *msg, ...)
+{
+  if ((atomic_load_relaxed(&caml_verb_gc) & 0x800) != 0) {
+    char fmtbuf[GC_LOG_LENGTH];
+    va_list args;
+    va_start (args, msg);
+    snprintf(fmtbuf, GC_LOG_LENGTH, "[%02d] %s\n", -1, msg); // FIXME
+    vfprintf(stderr, fmtbuf, args);
+    va_end (args);
+    fflush(stderr);
+  }
+}
 
 void caml_gc_message (int level, char *msg, ...)
 {

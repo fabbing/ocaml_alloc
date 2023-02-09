@@ -44,6 +44,9 @@
   asize_t reserve;             \
 }
 
+/* Count of the total number of minor collections performed by the program */
+CAMLextern atomic_uintnat caml_minor_collections_count;
+
 struct caml_ref_table CAML_TABLE_STRUCT(value *);
 
 struct caml_ephe_ref_elt {

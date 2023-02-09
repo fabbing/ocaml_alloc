@@ -153,6 +153,8 @@ typedef uint64_t uintnat;
 #error "No integer type available to represent pointers"
 #endif
 
+#define UINTNAT_MAX ((uintnat)-1)
+
 #endif /* CAML_CONFIG_H_NO_TYPEDEFS */
 
 /* Endianness of floats */
@@ -267,6 +269,6 @@ typedef uint64_t uintnat;
 #define Custom_minor_max_bsz_def 8192
 
 /* Default allocation policy. */
-#define Allocation_policy_def caml_policy_best_fit
+#define Allocation_policy_def caml_policy_alloc_five
 
 #endif /* CAML_CONFIG_H */

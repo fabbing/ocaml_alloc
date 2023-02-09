@@ -24,6 +24,18 @@ extern "C" {
 #ifdef CAML_INTERNALS
 
 #include "domain_state.h"
+#include "platform.h"
+
+/* The runtime currently has a hard limit on the number of domains.
+   This hard limit may go away in the future. */
+#ifdef ARCH_SIXTYFOUR
+#define Max_domains 128
+#else
+#define Max_domains 16
+#endif
+
+CAMLextern atomic_uintnat caml_num_domains_running;
+
 
 void caml_init_domain(void);
 

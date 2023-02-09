@@ -32,6 +32,8 @@
 #include "caml/misc.h"
 #include "caml/mlvalues.h"
 #include "caml/eventlog.h"
+#include "caml/shared_heap.h"
+#include "caml/signals.h"
 
 /*************** declarations common to all policies ******************/
 
@@ -1747,6 +1749,58 @@ static void bf_make_free_blocks (value *p, mlsize_t size, int do_merge,
   }
 }
 
+/**************************************************************************/
+
+static header_t *five_allocate(mlsize_t wo_sz)
+{
+  tag_t tag = 42; // FIXME
+  reserved_t reserved = 0; // FIXME
+
+  caml_domain_state *dom_st = Caml_state;
+  value *v = caml_shared_try_alloc(dom_st->shared_heap, wo_sz, tag, reserved, 0);
+  if (v == NULL) {
+      return NULL;
+  }
+
+  dom_st->allocated_words += Whsize_wosize(wo_sz);
+  if (dom_st->allocated_words > dom_st->minor_heap_wsz) {
+    //CAML_EV_COUNTER (EV_C_REQUEST_MAJOR_ALLOC_SHR, 1);
+    caml_request_major_slice();
+  }
+
+#ifdef DEBUG
+  if (tag < No_scan_tag) {
+    mlsize_t i;
+    for (i = 0; i < wo_sz; i++)
+      Op_hp(v)[i] = Debug_uninit_major;
+  }
+#endif
+  return (header_t*)v; // FIXME
+}
+
+static void five_init_merge(void)
+{
+  //fprintf(stderr, "five_init_merge\n"); // XXX
+}
+
+static void five_make_free_blocks(value *p, mlsize_t size, int do_merge,
+                                       int color)
+{
+  //fprintf(stderr, "five_make_free_blocks\n"); // XXX
+}
+
+//static void five_add_blocks(value *p, mlsize_t size, int do_merge, int color)
+//{ }
+
+#ifdef DEBUG
+static void five_check(void)
+{
+  CAMLassert(0); // FIXME
+}
+#endif
+
+/**************************************************************************/
+
 /********************* exported functions *****************************/
 
 /* [caml_fl_allocate] does not set the header of the newly allocated block.
@@ -1827,7 +1881,6 @@ void caml_set_allocation_policy (uintnat p)
 #endif
     break;
 
-  default:
   case caml_policy_best_fit:
     caml_allocation_policy = caml_policy_best_fit;
     caml_fl_p_allocate = &bf_allocate;
@@ -1839,6 +1892,21 @@ void caml_set_allocation_policy (uintnat p)
     caml_fl_p_make_free_blocks = &bf_make_free_blocks;
 #ifdef DEBUG
     caml_fl_p_check = &bf_check;
+#endif
+   break;
+
+  default:
+  case caml_policy_alloc_five:
+    caml_allocation_policy = p;
+    caml_fl_p_allocate = &five_allocate;
+    caml_fl_p_init_merge = &five_init_merge;
+    caml_fl_p_reset = NULL;
+    caml_fl_p_init = NULL;
+    caml_fl_p_merge_block = NULL;
+    caml_fl_p_add_blocks = NULL;
+    caml_fl_p_make_free_blocks = &five_make_free_blocks;
+#ifdef DEBUG
+    caml_fl_p_check = five_check;
 #endif
     break;
   }

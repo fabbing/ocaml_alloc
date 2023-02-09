@@ -264,7 +264,7 @@ static value heap_stats (int returnstats)
 #ifdef DEBUG
 void caml_heap_check (void)
 {
-  heap_stats (0);
+  //heap_stats (0); TODO
 }
 #endif
 

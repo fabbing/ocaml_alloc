@@ -108,6 +108,13 @@ extern char_os *caml_secure_getenv(char_os const *var);
    cannot be determined, return -1. */
 extern int caml_num_rows_fd(int fd);
 
+/* Memory management platform-specific operations */
+
+void *caml_plat_mem_map(uintnat, uintnat, int);
+void *caml_plat_mem_commit(void *, uintnat);
+void caml_plat_mem_decommit(void *, uintnat);
+void caml_plat_mem_unmap(void *, uintnat);
+
 #ifdef _WIN32
 
 extern int caml_win32_rename(const wchar_t *, const wchar_t *);
@@ -137,6 +144,8 @@ CAMLextern void caml_expand_command_line (int *, wchar_t ***);
 CAMLextern clock_t caml_win32_clock(void);
 
 #endif /* _WIN32 */
+
+extern void caml_init_os_params(void);
 
 #endif /* CAML_INTERNALS */
 
